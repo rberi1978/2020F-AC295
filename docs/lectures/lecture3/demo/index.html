@@ -9,12 +9,12 @@
     />
     <meta
       name="description"
-      content="Fall 2020 - Harvard University, Institute for Applied Computational Science. Lecture 3: Notebook 3"
+      content="Fall 2020 - Harvard University, Institute for Applied Computational Science. Lecture 3: Demo"
     />
     <meta name="author" content="Andrea Porelli" />
 <meta
   name="keywords"
-  content=""
+  content="Docker"
 />
 
     <!-- Bootstrap CSS -->
@@ -53,7 +53,7 @@
     />
     <link rel="stylesheet" href="../../../style/css/iacs.css" />
 
-    <title>Harvard AC295 | Lecture 3: Notebook 3</title>
+    <title>Harvard AC295 | Lecture 3: Demo</title>
 
     <style>
       .navbar {
@@ -133,8 +133,14 @@
 </nav>
     <main id="content" class="container">
  <div>
+  <div class="float-left">
+    <p>
+      Key Word(s):       <a href="../../../pages/materials.html#Docker"
+        >Docker</a
+      >     </p>
+  </div>
   <div class="float-right">
-    <a href="../../../lectures/lecture3/notebook/lecture3.ipynb">
+    <a href="../../../lectures/lecture3/demo/lec3_demo_webdb_kub.ipynb">
       Download Notebook <i class="fas fa-download"></i>
     </a>
   </div>
@@ -1252,37 +1258,126 @@ h6:hover .anchor-link {
 .highlight .vg { color: #19177C } /* Name.Variable.Global */
 .highlight .vi { color: #19177C } /* Name.Variable.Instance */
 .highlight .vm { color: #19177C } /* Name.Variable.Magic */
-.highlight .il { color: #666666 } /* Literal.Number.Integer.Long */</style><div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [1]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</pre></div>
+.highlight .il { color: #666666 } /* Literal.Number.Integer.Long */</style><div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1><img src="https://raw.githubusercontent.com/Harvard-IACS/2018-CS109A/master/content/styles/iacs.png" style="float: left; padding-right: 10px; width: 45px" /> APCOMP 295 Advanced Practical Data Science</h1>
+<h2 id="Demo-3---Web-DB-servers-on-minikube">Demo 3 - Web DB servers on minikube<a class="anchor-link" href="#Demo-3---Web-DB-servers-on-minikube">¶</a></h2><p><strong>Harvard University</strong><br />
+<strong>Fall 2020</strong><br />
+<strong>Instructors</strong>: Pavlos Protopapas</p>
+<hr style="height:2pt" />
 </div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Deploy-your-container-to-a-Kubernetes-Cluster">Deploy your container to a Kubernetes Cluster<a class="anchor-link" href="#Deploy-your-container-to-a-Kubernetes-Cluster">¶</a></h2><p>Last week we built a dockerized web + db application now the goal is to deploy it on Kubernetes Cluster.</p>
+<h3 id="Prerequites">Prerequites<a class="anchor-link" href="#Prerequites">¶</a></h3><p>You will need to have installed <code>kubectl</code> and <code>Minikube</code> according to the instructions.<br />
+This part of the Kubernetes tutorial was adapted from <a href="https://medium.com/@yzhong.cs/getting-started-with-kubernetes-and-docker-with-minikube-b413d4deeb92">https://medium.com/@yzhong.cs/getting-started-with-kubernetes-and-docker-with-minikube-b413d4deeb92</a>.</p>
+<h3 id="Setup">Setup<a class="anchor-link" href="#Setup">¶</a></h3><ol>
+<li>Run <code>minikube start</code> in your Terminal window.<ol>
+<li>You should see several lines beginning with emojis. The last line should say <code>Done! kubectl is now configured to use "minikube"</code>.</li>
+<li>You now have a virtual cluster running on your machine/computer. You can think of this cluster as running a virtual machine on your personal computer.
+<br />
+<br /> </li>
+</ol>
+</li>
+<li>Kubernetes organizes Docker containers into <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod/">Pods</a>. Docker containers in the same pod share CPU allocation and memory. Typically, you would want multiple Docker containers in the same pod because they must interact to achieve some process, such as dealing with reads and writes to a database. <a href="https://linchpiner.github.io/k8s-multi-container-pods.html">Some info on why a pod may have multiple containers</a>.<ol>
+<li>To create a pod, we must also create a <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployment</a>, which is basically a set of rules for how much CPU and memory a pod should have access to and different labels/names for a pod. Additionally, a deployment specifies what should happen to a pod if it stops running.
+<br /><br /> </li>
+</ol>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Deploy-DB">Deploy DB<a class="anchor-link" href="#Deploy-DB">¶</a></h3><p>Deployments can be configured from the command-line, but this becomes difficult when you have many parameters to specify. Therefore, users typically generate a YAML file specifying the details of their deployment, which is what we will do as well. It is convention to name the deployment object the same as the YAML file.</p>
+<ol>
+<li>Please download the <code>hello_world_db_deployment.yml</code> file from the course website and place it in the same directory you created for lecture2.</li>
+<li>The name of our Deployment is <code>hello-world-db-deployment</code>.</li>
+<li>We only want one pod for our deployment, as indicated by <code>replicas: 1</code>.</li>
+<li>The <code>selector</code> defines how the Deployment finds which Pod(s) to manage. In this case, we simply select a label that is defined in the Pod template. That’s what the two books-app fields are for.</li>
+<li>We specify the Docker image and version we want to use- <code>pavlosprotopapas/ac295_lecture2:db</code>. The <code>imagePullPolicy</code> is set to <code>Always</code> since we want to pull the Docker image from Docker Hub whenever we create a new Pod. I already pushed our database server Docker image to a repository on Docker hub, making it easier for us to deploy the Docker image with our web application using Kubernetes.</li>
+<li>You can see that we expose port 8081 for the Pod.</li>
+</ol>
+<ol>
+<li>We can create a deployment for our Docker image using <code>kubectl create -f hello_world_db_deployment.yml</code>. </li>
+<li>You should get a message saying "deployment.apps/hello-world created".</li>
+<li>You can now use the <code>kubectl get deployments</code> command to see that your deployment is available, meaning it is ready to receive HTTP requests. Use <code>kubectl get pods</code> command to see that pods are running.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Deploy-Server">Deploy Server<a class="anchor-link" href="#Deploy-Server">¶</a></h3><p>Now, the Pod is running our database server running on our Kubernetes cluster, however this server is not exposed to the outside world because it is encapsulated within the cluster. Check this by trying to connect to <a href="http://localhost:8081/">http://localhost:8081/</a>. You should get a connection error. We need to now create a deployment for our front-end web server, so that we can access our web application.</p>
+<ol>
+<li><p>Let's create a deployment for our front-end server.</p>
+<ol>
+<li>Please download the <code>hello_world_server_deployment.yml</code> file from the  course website and place it in the same directory.</li>
+<li>Remember that we need to have our front-end server connect to our database server, like we accomplished when we were just running the Docker containers on our local machines. To accomplish this, we need to know the internal IP address that Kubernetes has assigned to the Pod running our database server. This IP address can only be used from within the Kubernetes cluster. We can get this IP by running <code>kubectl get pods -o=custom-columns=NAME:.metadata.name,IP:.status.podIP</code>.</li>
+<li>Open up the <code>hello_world_server_deployment.yml</code> file and make sure the IP you get for the <code>hello-world-db-deployment</code> is the same IP address specified in the <code>value</code> field for the <code>DB_URL</code>. If it is the same, then you're good to go. If it is different, then please change it.<ol>
+<li>You will also see that we specify port 8080 as a communication port for the Pod.</li>
+</ol>
+</li>
+<li>Now, we can run <code>kubectl create -f hello_world_server_deployment.yml</code> to create a deployment for our front-end web server.</li>
+<li>Use <code>kubectl get deployments</code> and <code>kubectl get pods</code> to see that your pods are running.</li>
+</ol>
+</li>
+<li><p>Now that we have both parts of our application running, try visiting <a href="http://localhost:8080/">http://localhost:8080/</a>. Can you access the web application? The answer should be no because although we have exposed ports for our Pods, they are not accessible to the outside world. So far, we can only communicate with the Pods running our application if we are within the Kubernetes cluster (again, this is for isolation purposes). Let's check this out from within the cluster.</p>
+<ol>
+<li>Run <code>kubectl get pods -o=custom-columns=NAME:.metadata.name,IP:.status.podIP</code> and copy the IP address for the <code>hello-world-server-deployment</code>.</li>
+<li>Run <code>minikube ssh</code> in your Terminal window. You should see "minikube" written in you Terminal window.</li>
+<li>Run <code>curl <hello-world-server-deployment-url>:8080/</code> several times. You should get responses for "Hello world!" in different languages, demonstrating that the application is working.</li>
+<li>Run <code>exit</code> to exit the minikube Terminal.</li>
+</ol>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Expose-to-the-world">Expose to the world<a class="anchor-link" href="#Expose-to-the-world">¶</a></h3><ol>
+<li><p>To be able to access our web application from outisde, we need to create a Kubernetes <a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service</a> to make the <code>hello-world</code> container accessible from outside the Kubernetes virtual network.</p>
+<ol>
+<li>Use <code>kubectl expose deployment hello-world-server-deployment --type=LoadBalancer --port=8080</code> to allow your container to receive HTTP request from outside.</li>
+<li>You should get a message that says "service/hello-world exposed".</li>
+</ol>
+</li>
+<li><p>You can view the status of your sercice by using the <code>kubectl get services</code> command.</p>
+<ol>
+<li>Notice that the <code>EXTERNAL-IP</code> for our service is <em>pending</em>. If we were running our Kubernetes cluster using a cloud provider, such as AWS, we would get an actual IP address to access our service from anywhere.</li>
+<li>Since we are running Minikube, you can access your service by using the <code>minikube service hello-world-server-deployment</code>. This should automatically open a web page with our <code>Hello world!</code> page. Reload this page a few times to see the different "Hello world!" translations.</li>
+</ol>
+</li>
+<li><p>Congratulations! You have deployed a web application using Kubernetes!</p>
+</li>
+</ol>
+<p>Below is a schematic of your Dockerized web application on a Kubernetes (K8s) cluster. The two servers are running in individual Docker containers within the Kubernetes cluster, which is emulated by a VM in your case. Generally, a Kubernetes cluster would exists across serveral machines on a cloud provider like AWS. The K8s cluster takes care of generating a network for us and provides individual IP addresses for each of our Pods, reducing our work. By creating a K8s service for your web application, you provide outside users an entry point to use your application while protecting your database.
+<img alt="" src="K8s_python_app.png" /></p>
+<h3 id="Clean-Up">Clean Up<a class="anchor-link" href="#Clean-Up">¶</a></h3><p>You can clean up the resources and cluster using:</p>
+<pre><code>1. `kubectl delete service hello-world-server-deployment`
+2. `kubectl delete deployment hello-world-server-deployment`
+2. `kubectl delete deployment hello-world-db-deployment`
+3. `minikube stop`
+3. `minikube delete`</code></pre>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In [2]:</div>
+<div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">]</span>
-<span class="n">summation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">summation</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span> 
 </pre></div>
-</div>
-</div>
-</div>
-<div class="output_wrapper">
-<div class="output">
-<div class="output_area">
-<div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>11
-</pre>
-</div>
 </div>
 </div>
 </div>
